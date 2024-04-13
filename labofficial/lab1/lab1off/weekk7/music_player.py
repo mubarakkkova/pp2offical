@@ -20,7 +20,7 @@ def get_playlist(path):
 
     return list(filter(re.compile(r".*\.(mp3|ogg|wav)$").match, new_list))            
 
-path = r"c:\Users\Temirlan\Desktop\second sem\pp2\labs\lab 7\player_assets"
+path = r"C:\Users\Lenovo\Desktop\pp2\labofficial\lab1\lab1off\weekk7\player_assets"
 new_list = []
 playlist = get_playlist(path)
 songNames = []

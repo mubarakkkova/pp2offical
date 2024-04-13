@@ -1,182 +1,77 @@
-import pygame              
-import random              
-                           
-pygame.init() 
+import pygame  # Импорт модуля pygame для работы с графикой и управлением
+import sys  # Импорт модуля sys для работы с системными функциями
+import random  # Импорт модуля random для генерации случайных чисел
 
-SW, SH = 600, 600 # screen size(playing area)
-WW, WH = 600, 700 # window size
+pygame.init()  # Инициализация всех импортированных модулей pygame
 
-BLOCK_SIZE = 40
-FONT = pygame.font.SysFont("Futura", BLOCK_SIZE)    
+# Основные параметры экрана
+width, height = 640, 480  # Установка размеров экрана
+screen = pygame.display.set_mode((width, height))  # Создание окна игры с заданными размерами
+clock = pygame.time.Clock()  # Создание объекта для отслеживания времени
 
-screen = pygame.display.set_mode((WW, WH))
-pygame.display.set_caption("snake")
-clock = pygame.time.Clock() # to controlling the game's speed
+# Цвета
+black = (0, 0, 0)  # Цвет фона
+green = (0, 255, 0)  # Цвет тела змейки
+red = (255, 0, 0)  # Цвет еды
+white = (255, 255, 255)  # Цвет текста
+blue = (0, 0, 255)  # Цвет головы змейки
 
-class Snake:
-    def __init__(self):
-        self.x, self.y = BLOCK_SIZE, BLOCK_SIZE
-        self.xdir = 1
-        self.ydir = 0
-        self.head = pygame.Rect(self.x, self.y, BLOCK_SIZE, BLOCK_SIZE) # rectangle for the snake's head
-        self.body = [pygame.Rect(self.x-BLOCK_SIZE, self.y, BLOCK_SIZE, BLOCK_SIZE)] # snake's body as a list of rectangles
-        self.dead = False # flag indicating whether the snake is dead
-        self.restart = False # flag indicating whether the restart key has been pressed
-    
-    def update(self):
-        global apple, wall
-        
-        for square in self.body:
-            if self.head.x == square.x and self.head.y == square.y: # checking for collision of the snake's head with its body
-                self.dead = True
-            if self.head.x not in range(0, SW) or self.head.y not in range(0, SH): # checking if the snake leaves the playing area
-                self.dead = True
-        # restarting the game if the snake is dead and the restart is true
-        if self.dead and self.restart:
-                self.x, self.y = BLOCK_SIZE, BLOCK_SIZE
-                self.head = pygame.Rect(self.x, self.y, BLOCK_SIZE, BLOCK_SIZE)
-                self.body = [pygame.Rect(self.x-BLOCK_SIZE, self.y, BLOCK_SIZE, BLOCK_SIZE)]
-                self.xdir = 1
-                self.ydir = 0
-                self.dead = False
-                self.restart = False
-                apple = Apple() # creating a new apple
-                wall = Wall() # creating a new wall
-        # updating the snake's position
-        self.body.append(self.head)
-        for i in range(len(self.body) - 1):
-            self.body[i].x, self.body[i].y = self.body[i+1].x, self.body[i+1].y
-        self.head.x += self.xdir * BLOCK_SIZE
-        self.head.y += self.ydir * BLOCK_SIZE
-        self.body.remove(self.head)
+# Шрифт для счета
+font = pygame.font.Font(None, 36)  # Создание объекта шрифта для отображения текста
 
-class Apple:
-    def __init__(self):
-        self.spawn_apple()
-    # method for generating a new position for the apple
-    def spawn_apple(self):
-        self.x = int(random.randint(0, SW) / BLOCK_SIZE) * BLOCK_SIZE
-        self.y = int(random.randint(0, SH) / BLOCK_SIZE) * BLOCK_SIZE
-    # method for updating the position and drawing the apple
-    def update(self, snake_body): 
-        while (self.x, self.y) in [(square.x, square.y) for square in snake_body]:
-            self.spawn_apple()
-        self.new_apple = pygame.Rect(self.x, self.y, BLOCK_SIZE, BLOCK_SIZE)
-        pygame.draw.rect(screen, "red", self.new_apple)
+# Параметры змейки и еды
+cell_size = 20  # Размер одной клетки на игровом поле
+snake = [(width // 2, height // 2)]  # Начальное положение змейки в центре экрана
+direction = (0, -cell_size)  # Начальное направление движения змейки вверх
+food = (random.randint(0, (width-cell_size)//cell_size) * cell_size,  # Случайное расположение еды по горизонтали
+        random.randint(0, (height-cell_size)//cell_size) * cell_size)  # Случайное расположение еды по вертикали
+score = 0  # Начальное значение счета
 
-class Wall:
-    def __init__(self):
-        self.barriers = []
-    # method for generating new barriers (walls)
-    def spawn_barrier(self, snake_body, apple_pos, snake_head_pos):
-        while True:
-            self.x = int(random.randint(0, SW) / BLOCK_SIZE) * BLOCK_SIZE
-            self.y = int(random.randint(0, SH) / BLOCK_SIZE) * BLOCK_SIZE
-            new_barrier = pygame.Rect(self.x, self.y, BLOCK_SIZE, BLOCK_SIZE) 
-            # condition ensures that the newly generated barrier does not collide with any part of the snake's body and does not overlap with the position of the apple 
-            if new_barrier.collidelist(snake_body) == -1 and new_barrier.collidepoint(apple_pos) == False:
-                # condition ensures that the new barrier is not placed too close to the snake's head. (barrier is at least three blocks away from the snake's head)  
-                if abs(snake_head_pos[0] - new_barrier.x) > 3 * BLOCK_SIZE or abs(snake_head_pos[1] - new_barrier.y) > 3 * BLOCK_SIZE:
-                    self.barriers.append(new_barrier)
-                    break    
-    # method for updating and drawing the walls
-    def update(self, snake_body, apple_pos, snake_head_pos, eaten_fruits):
-        for barrier in self.barriers:
-            pygame.draw.rect(screen, "blue", barrier)
-            if barrier.colliderect(snake_head_pos): # checking for collision with added barriers
-                snake.dead = True
+# Параметр скорости
+speed = 10  # Скорость обновления кадров в игре
 
-        eaten_fruits = eaten_fruits // 2 # this means that a new barrier is added after every second fruit eaten.
-        if eaten_fruits > len(self.barriers):
-            for _ in range(eaten_fruits - len(self.barriers)):
-                self.spawn_barrier(snake_body, apple_pos, snake_head_pos)
-# function for drawing the game grid
-def drawGrid():
-    for x in range(0, SW, BLOCK_SIZE):
-        for y in range(0, SH, BLOCK_SIZE):
-            rect = pygame.Rect(x, y, BLOCK_SIZE, BLOCK_SIZE)
-            pygame.draw.rect(screen, (60, 60, 60), rect, 1)
+# Игровой цикл
+running = True
+while running:
+    for event in pygame.event.get():  # Обработка событий
+        if event.type == pygame.QUIT:  # Событие закрытия окна
+            running = False
+        elif event.type == pygame.KEYDOWN:  # Событие нажатия клавиши
+            if event.key == pygame.K_UP and direction != (0, cell_size):
+                direction = (0, -cell_size)
+            elif event.key == pygame.K_DOWN and direction != (0, -cell_size):
+                direction = (0, cell_size)
+            elif event.key == pygame.K_LEFT and direction != (cell_size, 0):
+                direction = (-cell_size, 0)
+            elif event.key == pygame.K_RIGHT and direction != (-cell_size, 0):
+                direction = (cell_size, 0)
 
-# initializing score, speed, and eaten fruits variables
-score = speed = eaten_fruits = 0
-scoretxt = speedtxt = leveltxt = FONT.render("0", True, "white")
-score_rect = scoretxt.get_rect(center=(20, 620))
-speed_rect = speedtxt.get_rect(center=(20, 660))
-level_rect = leveltxt.get_rect(center=(480, 620))
+    # Перемещение змейки
+    new_head = ((snake[0][0] + direction[0]) % width, (snake[0][1] + direction[1]) % height)
+    if new_head in snake:
+        running = False  # Столкновение с самой собой
 
-drawGrid()
-# creating a objects of game 
-snake = Snake()
-apple = Apple()
-wall = Wall()
+    snake.insert(0, new_head)  # Добавление новой головы
+    if snake[0] == food:
+        score += 10  # Увеличение счета
+        food = (random.randint(0, (width-cell_size)//cell_size) * cell_size,
+                random.randint(0, (height-cell_size)//cell_size) * cell_size)
+    else:
+        snake.pop()  # Удаление последнего элемента
 
-done = False
+    # Отрисовка элементов игры
+    screen.fill(black)
+    for index, segment in enumerate(snake):
+        color = blue if index == 0 else green  # Использование синего цвета для головы
+        pygame.draw.rect(screen, color, (segment[0], segment[1], cell_size, cell_size))
+    pygame.draw.rect(screen, red, (food[0], food[1], cell_size, cell_size))
 
-while not done:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE: # exit the game
-                done = True
-            elif event.key == pygame.K_SPACE: # restart the game
-                snake.restart = True
-                score = speed = eaten_fruits = 0
-            if event.key == pygame.K_DOWN: 
-                snake.ydir = 1
-                snake.xdir = 0
-            elif event.key == pygame.K_UP:
-                snake.ydir = -1
-                snake.xdir = 0
-            elif event.key == pygame.K_RIGHT:
-                snake.ydir = 0
-                snake.xdir = 1
-            elif event.key == pygame.K_LEFT:
-                snake.ydir = 0
-                snake.xdir = -1
+    # Отображение счета
+    score_text = font.render(f'Score: {score}', True, white)
+    screen.blit(score_text, (10, 10))
 
-    snake.update()
-    
-    screen.fill("black")
+    pygame.display.flip()
+    clock.tick(speed)
 
-    drawGrid()
-
-    wall.update(snake.body, (apple.x, apple.y), snake.head, eaten_fruits)
-
-    apple.update(snake.body)
-    
-    pygame.draw.rect(screen, (0, 255, 0), snake.head) # drawing the snake's head
-    pygame.draw.rect(screen, (42, 42, 42), [0, SH, WW, WH]) # drawing the surface for showing some statistics
-    # drawing the current values of score, speed, and level 
-    scoretxt = FONT.render(f"score: {score}", True, (138, 154, 91)) 
-    speedtxt = FONT.render(f"speed: {speed + 5}", True, (96, 130, 182))
-    leveltxt = FONT.render(f"level: {eaten_fruits//2}", True, (207, 159, 255))
-    # displaying the score, speed, and level on the screen
-    screen.blit(scoretxt, score_rect)
-    screen.blit(speedtxt, speed_rect)
-    screen.blit(leveltxt, level_rect)
-
-    # drawing the snake's body
-    for square in snake.body:
-        pygame.draw.rect(screen, (0, 65, 0), square)
-
-    if snake.head.x == apple.x and snake.head.y == apple.y:
-        snake.body.append(pygame.Rect(square.x, square.y, BLOCK_SIZE, BLOCK_SIZE)) 
-        apple = Apple() # creating a new apple, after snake has eaten current apple 
-        eaten_fruits += 1
-        score += 1
-        if eaten_fruits % 5 == 0: # increasing speed after every fifth fruit eaten
-            speed += 0.5
-    # checking that a new apple will not be created on an existing barrier
-    for barrier in wall.barriers:
-        if apple.x == barrier[0] and apple.y == barrier[1]: # else regenerate new position for apple
-            apple.spawn_apple()
-    # game over when the snake dies
-    if snake.dead and not snake.restart:
-        screen.fill("black")
-        endtxt = FONT.render(f"your score: {score}", True, "red") 
-        end_rect = endtxt.get_rect(center=(SW/2, SH/2))
-        screen.blit(endtxt, end_rect)
-
-    pygame.display.update() # updating the screen
-    clock.tick(5 + speed) # using fps to control game speed
+pygame.quit()
+sys.exit()

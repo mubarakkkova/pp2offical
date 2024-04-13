@@ -4,16 +4,16 @@ pg.init()
 screen = pg.display.set_mode((700, 500))
 window_title = pg.display.set_caption("moving ball")
 clock = pg.time.Clock()
-running = True
+running = True #контролирует игровой цикл
 
 player_pos = pg.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
-while running:
+while running: #закрытие окна 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
 
-    screen.fill("white")
+    screen.fill("white") #белым цветом каждый кадр
     pg.draw.circle(screen, "red", player_pos, 25)
 
     keys = pg.key.get_pressed()
