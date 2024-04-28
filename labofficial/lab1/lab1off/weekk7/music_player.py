@@ -146,6 +146,9 @@ while not done:
     previous_button = screen.blit(previous_surf, previous_rect)
     volume_button = screen.blit(volumeDefault_surf, volume_rect)
 
+
+
+
     pg.display.flip()
     clock.tick(90)
 

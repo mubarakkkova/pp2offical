@@ -6,7 +6,7 @@ pg.init()
 screen = pg.display.set_mode((800, 800))
 window_title = pg.display.set_caption("mickey mouse clock")
 icon = pg.display.set_icon(pg.image.load(r"clock_assets/icon.png"))
-clock = pg.time.Clock()
+clock = pg.time.Clock() #чистата кадров
 
 # loading the images 
 bg_surf = pg.image.load(r"clock_assets/mainclock.png")
@@ -26,10 +26,10 @@ while not done:
     seconds_angle = -(current_time.second * 6)
     minutes_angle = -(current_time.minute * 6)
 
-    rotated_leftarm = pg.transform.rotate(leftarm_surf, seconds_angle)
+    rotated_leftarm = pg.transform.rotate(leftarm_surf, seconds_angle) #стрелки вращ на рассчитанные углы
     rotated_rightarm = pg.transform.rotate(rightarm_surf, minutes_angle)
 
-    leftarm_rect = rotated_leftarm.get_rect(center = bg_rect.center)
+    leftarm_rect = rotated_leftarm.get_rect(center = bg_rect.center) #центрирует вращ стрелки
     rightarm_rect = rotated_rightarm.get_rect(center = bg_rect.center)
 
     screen.blit(bg_surf, bg_rect)

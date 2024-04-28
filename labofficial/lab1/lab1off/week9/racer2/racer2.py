@@ -28,6 +28,7 @@ SPEED_OF_ENEMY = 5
 SCORE = 0
 COIN_SCORE = 0
 TOTAL_SCORE = 0
+LEVEL_SCORE = 1
 
 # Setting up Fonts
 font = pygame.font.SysFont("Verdana", 60)
@@ -36,7 +37,7 @@ game_over = font.render("Game Over", True, BLACK)
 
 background = pygame.image.load("AnimatedStreet.png")
 
-# Create a white screen
+# Cre ate a white screen
 DISPLAYSURF = pygame.display.set_mode((400, 600))
 DISPLAYSURF.fill(WHITE)
 pygame.display.set_caption("Game")
@@ -86,6 +87,7 @@ class Player(pygame.sprite.Sprite):
         return False
 
 
+
 class Coin(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -99,32 +101,69 @@ class Coin(pygame.sprite.Sprite):
             self.rect.top = 0
             self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
 
+class Coin1(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("Coin.png")
+        self.rect = self.image.get_rect()
+        self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
 
+    def move(self):
+        self.rect.move_ip(0, SPEED_OF_COIN)
+        if self.rect.top > 600:
+            self.rect.top = 0
+            self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
+
+class Coin2(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.image.load("Coin.png")
+        self.rect = self.image.get_rect()
+        self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
+
+    def move(self):
+        self.rect.move_ip(0, SPEED_OF_COIN)
+        if self.rect.top > 600:
+            self.rect.top = 0
+            self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
+
+            
 # Setting up Sprites
 P1 = Player()
 E1 = Enemy()
 C1 = Coin()
+C2 = Coin2()
+C3 = Coin1() 
 
 # Creating Sprites Groups
 enemies = pygame.sprite.Group()
 enemies.add(E1)
+
 coins = pygame.sprite.Group()
 coins.add(C1)
+
 all_sprites = pygame.sprite.Group()
 all_sprites.add(P1)
 all_sprites.add(E1)
 all_sprites.add(C1)
+all_sprites.add(C2)
+all_sprites.add(C3)
+
+big_coins = pygame.sprite.Group()
+big_coins.add(C2)
+
+super_coins = pygame.sprite.Group()
+super_coins.add(C3)
 
 # Adding a new User event
 INC_SPEED = pygame.USEREVENT + 1
-pygame.time.set_timer(INC_SPEED, 1000)
+pygame.time.set_timer(INC_SPEED,1000)
 
 done = False
 
 # Game Loop
 while not done:
-
-    # Cycles through all events occurring
+# Cycles through all events occurring
     for event in pygame.event.get():
         if event.type == INC_SPEED:
             SPEED_OF_COIN += 0.5
@@ -140,9 +179,12 @@ while not done:
     scores = font_small.render(str(SCORE), True, BLACK)
     coin_scores = font_small.render(f"Coins: {COIN_SCORE}", True, BLACK)
     total_scores = font_small.render(f"Score: {TOTAL_SCORE}", True, BLACK)
+    level_scores = font_small.render(f"Level: {LEVEL_SCORE}", True, BLACK)
+
     DISPLAYSURF.blit(scores, (10, 10))
     DISPLAYSURF.blit(coin_scores, (280, 10))
     DISPLAYSURF.blit(total_scores, (280, 40))
+    DISPLAYSURF.blit(level_scores, (280, 70))
 
     # Moves and Re-draws all Sprites
     for entity in all_sprites:
@@ -162,6 +204,30 @@ while not done:
             SPEED_OF_ENEMY += 1.0
         new_coin = Coin()
         coins.add(new_coin)
+        all_sprites.add(new_coin)
+
+    if P1.collect_coin(big_coins):
+        pygame.mixer.Sound("GetCoin.mp3").play()
+        COIN_SCORE += 5
+        # Total score increase on random points
+        TOTAL_SCORE += random_score
+        # If player reach 100 points then speed of the game increase on 1.0
+        if TOTAL_SCORE == 100:
+            SPEED_OF_ENEMY += 1.0
+        new_coin = Coin1()
+        big_coins.add(new_coin)
+        all_sprites.add(new_coin)
+
+    if P1.collect_coin(super_coins):
+        pygame.mixer.Sound("GetCoin.mp3").play()
+        COIN_SCORE += 10
+        # Total score increase on random points
+        TOTAL_SCORE += random_score
+        # If player reach 100 points then speed of the game increase on 1.0
+        if TOTAL_SCORE == 100:
+            SPEED_OF_ENEMY += 1.0
+        new_coin = Coin2()
+        super_coins.add(new_coin)
         all_sprites.add(new_coin)
 
     # To be run if collision occurs between Player and Enemy
